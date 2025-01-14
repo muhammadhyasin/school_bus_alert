@@ -29,11 +29,38 @@
         <link href="/css/icons.min.css" rel="stylesheet" type="text/css" />
         <!-- App Css-->
         <link href="/css/app.min.css" id="app-style" rel="stylesheet" type="text/css" />
+        <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+        <style>
+            .noti-dot {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                display: none;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background-color: #f46a6a;
+            }
+            
+            .notification-item {
+                padding: 0.75rem 1rem;
+                border-bottom: 1px solid #f6f6f6;
+            }
+            
+            .notification-item:hover {
+                background-color: #f8f9fa;
+            }
+            
+            .notification-item:last-child {
+                border-bottom: none;
+            }
+            </style>
         
 
     </head>
 
-    <body data-topbar="dark">
+    <body>
     
     <!-- <body data-layout="horizontal" data-topbar="dark"> -->
 
@@ -51,7 +78,7 @@
                                     <img src="/images/logo-sm.png" alt="logo-sm" height="30">
                                 </span>
                                 <span class="logo-lg">
-                                    <img src="/images/logo-dark.png" alt="logo-dark" height="50">
+                                    <img src="/images/logo-light.png" alt="logo-dark" height="50">
                                 </span>
                             </a>
 
@@ -93,70 +120,12 @@
                                             <h6 class="m-0"> Notifications </h6>
                                         </div>
                                         <div class="col-auto">
-                                            <a href="#!" class="small"> View All</a>
+                                            <a href="javascript:void(0)" class="small mark-all-read"> Mark all as read</a>
                                         </div>
                                     </div>
                                 </div>
-                                <div data-simplebar style="max-height: 230px;">
-                                    <a href="" class="text-reset notification-item">
-                                        <div class="d-flex">
-                                            <div class="avatar-xs me-3">
-                                                <span class="avatar-title bg-primary rounded-circle font-size-16">
-                                                    <i class="ri-shopping-cart-line"></i>
-                                                </span>
-                                            </div>
-                                            <div class="flex-1">
-                                                <h6 class="mb-1">Your order is placed</h6>
-                                                <div class="font-size-12 text-muted">
-                                                    <p class="mb-1">If several languages coalesce the grammar</p>
-                                                    <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 3 min ago</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </a>
-                                    <a href="" class="text-reset notification-item">
-                                        <div class="d-flex">
-                                            <img src="/images/users/avatar-3.png"
-                                                class="me-3 rounded-circle avatar-xs" alt="user-pic">
-                                            <div class="flex-1">
-                                                <h6 class="mb-1">James Lemire</h6>
-                                                <div class="font-size-12 text-muted">
-                                                    <p class="mb-1">It will seem like simplified English.</p>
-                                                    <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 1 hours ago</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </a>
-                                    <a href="" class="text-reset notification-item">
-                                        <div class="d-flex">
-                                            <div class="avatar-xs me-3">
-                                                <span class="avatar-title bg-success rounded-circle font-size-16">
-                                                    <i class="ri-checkbox-circle-line"></i>
-                                                </span>
-                                            </div>
-                                            <div class="flex-1">
-                                                <h6 class="mb-1">Your item is shipped</h6>
-                                                <div class="font-size-12 text-muted">
-                                                    <p class="mb-1">If several languages coalesce the grammar</p>
-                                                    <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 3 min ago</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </a>
-
-                                    <a href="" class="text-reset notification-item">
-                                        <div class="d-flex">
-                                            <img src="/images/users/avatar-4.jpg"
-                                                class="me-3 rounded-circle avatar-xs" alt="user-pic">
-                                            <div class="flex-1">
-                                                <h6 class="mb-1">Salena Layfield</h6>
-                                                <div class="font-size-12 text-muted">
-                                                    <p class="mb-1">As a skeptical Cambridge friend of mine occidental.</p>
-                                                    <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 1 hours ago</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </a>
+                                <div data-simplebarr >
+                                    <!-- Notifications will be dynamically inserted here -->
                                 </div>
                                 <div class="p-2 border-top">
                                     <div class="d-grid">
@@ -243,9 +212,25 @@
             <!-- Start right Content here -->
             <!-- ============================================================== -->
             <div class="main-content">
-
                 <div class="page-content">
                     <div class="container-fluid">
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        @if($errors->any())
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <ul class="mb-0">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
 
                     @yield('content')
 
@@ -301,30 +286,6 @@
                                 <label class="form-check-label" for="dark-mode-switch">Dark Mode</label>
                             </div>
             
-                            <!-- <div class="mb-2">
-                                <img src="/images/layouts/layout-3.jpg" class="img-fluid img-thumbnail" alt="layout-3">
-                            </div>
-                            <div class="form-check form-switch mb-5">
-                                <input class="form-check-input theme-choice" type="checkbox" id="rtl-mode-switch" data-appStyle="/css/app-rtl.min.css">
-                                <label class="form-check-label" for="rtl-mode-switch">RTL Mode</label>
-                            </div> -->
-                            @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                {{ session('success') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        @endif
-
-                        @if($errors->any())
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <ul class="mb-0">
-                                    @foreach($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        @endif
                         </div>
         
                     </div> <!-- end slimscroll-menu-->

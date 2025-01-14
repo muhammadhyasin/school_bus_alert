@@ -18,7 +18,8 @@ class Student extends Model
         'roll_number',
         'address',
         'phone',
-        'status'
+        'status',
+        'exit_location_id'
     ];
 
     protected $casts = [
@@ -80,4 +81,15 @@ class Student extends Model
     {
         return $this->hasOne(AttendanceLog::class)->latest('scan_time');
     }
+
+    public function exitLocation()
+    {
+        return $this->belongsTo(LocationCard::class, 'exit_location_id');
+    }
+    public function feePayments()
+    {
+        return $this->hasMany(FeePayment::class);
+    }
+
+
 }

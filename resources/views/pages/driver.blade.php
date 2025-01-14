@@ -1,335 +1,370 @@
 @extends('layouts.main')
+
 @section('content')
 <div class="row">
     <div class="col-12">
-        <div
-            class="page-title-box d-sm-flex align-items-center justify-content-between"
-        >
-            <h4 class="mb-sm-0">Dashboard</h4>
-
-            <!-- <div class="page-title-right">
-                <ol class="breadcrumb m-0">
-                    <li class="breadcrumb-item"><a href="javascript: void(0);"></a></li>
-                    <li class="breadcrumb-item active">Dashboard</li>
-                </ol>
-            </div> -->
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Driver Dashboard</h4>
         </div>
     </div>
 </div>
-<!-- end page title -->
 
 <div class="row">
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
+    <div class="col-xl-4">
+        <div class="card card-h-100">
             <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-truncate font-size-14 mb-2">
-                            Starting time
-                        </p>
-                        <h4 class="mb-2">04:30</h4>
+                <h4 class="card-title mb-4">Bus Control Panel</h4>
+                
+                @if($activeBus)
+                    <div class="bus-info mb-4">
+                        <h5 class="text-muted">Assigned Bus</h5>
+                        <div class="d-flex align-items-center">
+                            <i class="ri-bus-line fs-2 me-2"></i>
+                            <div>
+                                <h4 class="mb-0">Bus #{{ $activeBus->bus_number }}</h4>
+                            </div>
+                        </div>
                     </div>
-                    <div class="avatar-sm">
-                        <span
-                            class="avatar-title bg-light text-primary rounded-3"
-                        >
-                            <i class="ri-time-line font-size-24"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <!-- end cardbody -->
-        </div>
-        <!-- end card -->
-    </div>
-    <!-- end col -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-truncate font-size-14 mb-2">
-                            Call institution
-                        </p>
-                        <h4 class="mb-2">Office</h4>
-                    </div>
-                    <div class="avatar-sm">
-                        <span
-                            class="avatar-title bg-light text-primary rounded-3"
-                        >
-                            <i class="ri-phone-line font-size-24"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <!-- end cardbody -->
-        </div>
-        <!-- end card -->
-    </div>
-    <!-- end col -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-truncate font-size-14 mb-2">
-                            Bus Details
-                        </p>
-                        <h4 class="mb-2">BN-02 [KL 07 AA 3525]</h4>
-                    </div>
-                    <div class="avatar-sm">
-                        <span
-                            class="avatar-title bg-light text-primary rounded-3"
-                        >
-                            <i class="ri-bus-line font-size-24"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <!-- end cardbody -->
-        </div>
-        <!-- end card -->
-    </div>
-    <!-- end col -->
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-truncate font-size-14 mb-2">
-                            Push urgent notification
-                        </p>
-                        <h4 class="mb-2">Bus will be late for HH:MM</h4>
+                    <div class="bus-session-controls">
+                        @if(!$currentSession)
+                            <div class="session-starter">
+                                <div class="mb-4">
+                                    <label class="form-label">Session Type</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="sessionType" id="morning" value="morning" checked>
+                                        <label class="btn btn-outline-primary" for="morning">
+                                            <i class="ri-sun-line me-1"></i> Morning
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="sessionType" id="evening" value="evening">
+                                        <label class="btn btn-outline-primary" for="evening">
+                                            <i class="ri-moon-line me-1"></i> Evening
+                                        </label>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary w-100" id="startSession">
+                                    <i class="ri-play-circle-line me-1"></i> Start Bus Session
+                                </button>
+                            </div>
+                        @else
+                            <div class="active-session">
+                                <div class="alert alert-soft-info border-0 mb-4">
+                                    <h5 class="text-info">
+                                        <i class="ri-time-line me-1"></i> Active Session
+                                    </h5>
+                                    <p class="mb-2">
+                                        <strong>Type:</strong> 
+                                        <span class="badge bg-soft-primary text-primary">
+                                            {{ ucfirst($currentSession->session_type) }}
+                                        </span>
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Started:</strong> 
+                                        {{ $currentSession->started_at->format('h:i A') }}
+                                    </p>
+                                </div>
+                                <button class="btn btn-danger w-100" id="endSession">
+                                    <i class="ri-stop-circle-line me-1"></i> End Bus Session
+                                </button>
+                                <div class="delay-controls mt-3">
+                                    <button class="btn btn-warning w-100 mb-3" id="reportDelay" data-bs-toggle="modal" data-bs-target="#delayModal">
+                                        <i class="ri-time-line me-1"></i> Report Delay
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Add this modal at the end of your content section -->
+                            <div class="modal fade" id="delayModal" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Report Bus Delay</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Estimated Delay</label>
+                                                <select class="form-select" id="delayDuration">
+                                                    <option value="5">5 minutes</option>
+                                                    <option value="10">10 minutes</option>
+                                                    <option value="15">15 minutes</option>
+                                                    <option value="20">20 minutes</option>
+                                                    <option value="30">30 minutes</option>
+                                                    <option value="custom">Custom duration</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3 custom-delay-input d-none">
+                                                <label class="form-label">Custom Delay (minutes)</label>
+                                                <input type="number" class="form-control" id="customDelayDuration" min="1" max="120">
+                                            </div>
+                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Reason for Delay</label>
+                                                <select class="form-select" id="delayReason">
+                                                    <option value="traffic">Heavy Traffic</option>
+                                                    <option value="weather">Bad Weather</option>
+                                                    <option value="mechanical">Mechanical Issue</option>
+                                                    <option value="accident">Road Accident</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3 other-reason-input d-none">
+                                                <label class="form-label">Specify Reason</label>
+                                                <input type="text" class="form-control" id="otherDelayReason">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-warning" id="submitDelay">
+                                                <i class="ri-send-plane-line me-1"></i> Send Notification
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        @endif
                     </div>
-                    <div class="avatar-sm">
-                        <button class="btn btn-primary">
-                            <i class="ri-send-plane-line"></i>
-                        </button>
+                @else
+                    <div class="alert alert-warning border-0">
+                        <i class="ri-alert-line me-1"></i> No bus assigned to you. Please contact the administrator.
                     </div>
-                </div>
+                @endif
             </div>
-            <!-- end cardbody -->
         </div>
-        <!-- end card -->
     </div>
-    <!-- end col -->
-</div>
-<!-- end row -->
 
-<!-- end row -->
-
-<div class="row">
     <div class="col-xl-8">
         <div class="card">
             <div class="card-body">
-                <div class="dropdown float-end">
-                    <a
-                        href="#"
-                        class="dropdown-toggle arrow-none card-drop"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                    >
-                        <i class="mdi mdi-dots-vertical"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end">
-                        <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item"
-                            >Sales Report</a
-                        >
-                        <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item"
-                            >Export Report</a
-                        >
-                        <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item"
-                            >Profit</a
-                        >
-                        <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item"
-                            >Action</a
-                        >
+                <h4 class="card-title mb-4">Today's Attendance Log</h4>
+                @if($currentSession)
+                    <div class="table-responsive">
+                        <table class="table table-centered align-middle table-nowrap mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Student</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceLogsTable">
+                                <!-- Will be populated via AJAX -->
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-
-                <h4 class="card-title mb-4">Contacts</h4>
-
-                <div class="table-responsive">
-                    <table
-                        class="table table-centered mb-0 align-middle table-hover table-nowrap"
-                    >
-                        <thead class="table-light">
-                            <tr>
-                                <th>Name</th>
-                                <th>Position</th>
-                                <th>Status</th>
-                                <th>Age</th>
-                                <th>Start date</th>
-                                <th style="width: 120px">Salary</th>
-                            </tr>
-                        </thead>
-                        <!-- end thead -->
-                        <tbody>
-                            <tr>
-                                <td><h6 class="mb-0">Charles Casey</h6></td>
-                                <td>Web Developer</td>
-                                <td>
-                                    <div class="font-size-13">
-                                        <i
-                                            class="ri-checkbox-blank-circle-fill font-size-10 text-success align-middle me-2"
-                                        ></i
-                                        >Active
-                                    </div>
-                                </td>
-                                <td>23</td>
-                                <td>04 Apr, 2021</td>
-                                <td>$42,450</td>
-                            </tr>
-                            <!-- end -->
-                            <tr>
-                                <td><h6 class="mb-0">Alex Adams</h6></td>
-                                <td>Python Developer</td>
-                                <td>
-                                    <div class="font-size-13">
-                                        <i
-                                            class="ri-checkbox-blank-circle-fill font-size-10 text-warning align-middle me-2"
-                                        ></i
-                                        >Deactive
-                                    </div>
-                                </td>
-                                <td>28</td>
-                                <td>01 Aug, 2021</td>
-                                <td>$25,060</td>
-                            </tr>
-                            <!-- end -->
-                            <tr>
-                                <td><h6 class="mb-0">Prezy Kelsey</h6></td>
-                                <td>Senior Javascript Developer</td>
-                                <td>
-                                    <div class="font-size-13">
-                                        <i
-                                            class="ri-checkbox-blank-circle-fill font-size-10 text-success align-middle me-2"
-                                        ></i
-                                        >Active
-                                    </div>
-                                </td>
-                                <td>35</td>
-                                <td>15 Jun, 2021</td>
-                                <td>$59,350</td>
-                            </tr>
-                            <!-- end -->
-                            <tr>
-                                <td><h6 class="mb-0">Ruhi Fancher</h6></td>
-                                <td>React Developer</td>
-                                <td>
-                                    <div class="font-size-13">
-                                        <i
-                                            class="ri-checkbox-blank-circle-fill font-size-10 text-success align-middle me-2"
-                                        ></i
-                                        >Active
-                                    </div>
-                                </td>
-                                <td>25</td>
-                                <td>01 March, 2021</td>
-                                <td>$23,700</td>
-                            </tr>
-                            <!-- end -->
-                            <tr>
-                                <td><h6 class="mb-0">Juliet Pineda</h6></td>
-                                <td>Senior Web Designer</td>
-                                <td>
-                                    <div class="font-size-13">
-                                        <i
-                                            class="ri-checkbox-blank-circle-fill font-size-10 text-success align-middle me-2"
-                                        ></i
-                                        >Active
-                                    </div>
-                                </td>
-                                <td>38</td>
-                                <td>01 Jan, 2021</td>
-                                <td>$69,185</td>
-                            </tr>
-                            <!-- end -->
-                            <tr>
-                                <td><h6 class="mb-0">Den Simpson</h6></td>
-                                <td>Web Designer</td>
-                                <td>
-                                    <div class="font-size-13">
-                                        <i
-                                            class="ri-checkbox-blank-circle-fill font-size-10 text-warning align-middle me-2"
-                                        ></i
-                                        >Deactive
-                                    </div>
-                                </td>
-                                <td>21</td>
-                                <td>01 Sep, 2021</td>
-                                <td>$37,845</td>
-                            </tr>
-                            <!-- end -->
-                            <tr>
-                                <td><h6 class="mb-0">Mahek Torres</h6></td>
-                                <td>Senior Laravel Developer</td>
-                                <td>
-                                    <div class="font-size-13">
-                                        <i
-                                            class="ri-checkbox-blank-circle-fill font-size-10 text-success align-middle me-2"
-                                        ></i
-                                        >Active
-                                    </div>
-                                </td>
-                                <td>32</td>
-                                <td>20 May, 2021</td>
-                                <td>$55,100</td>
-                            </tr>
-                            <!-- end -->
-                        </tbody>
-                        <!-- end tbody -->
-                    </table>
-                    <!-- end table -->
-                </div>
-            </div>
-            <!-- end card -->
-        </div>
-        <!-- end card -->
-    </div>
-    <!-- end col -->
-    <div class="col-xl-4">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title mb-4">Todays Attendance</h4>
-
-                <div class="row" style="display: flex">
-                    <div class="col-4" style="flex: 1">
-                        <div class="text-center mt-4">
-                            <h5>34</h5>
-                            <p class="mb-2 text-truncate">Present</p>
-                        </div>
+                @else
+                    <div class="alert alert-soft-warning border-0">
+                        <i class="ri-information-line me-1"></i> Start a bus session to view attendance logs
                     </div>
-                    <!-- end col -->
-                    <div class="col-4" style="flex: 1">
-                        <div class="text-center mt-4">
-                            <h5>28</h5>
-                            <p class="mb-2 text-truncate">Abscent</p>
-                        </div>
-                    </div>
-                    <!-- end col -->
-                    <!-- <div class="col-4">
-                        <div class="text-center mt-4">
-                            <h5>9062</h5>
-                            <p class="mb-2 text-truncate">Last Month</p>
-                        </div>
-                    </div> -->
-                    <!-- end col -->
-                </div>
-                <!-- end row -->
-
-                <div class="mt-4">
-                    <div id="donut-chart" class="apex-charts"></div>
-                </div>
+                @endif
             </div>
         </div>
-        <!-- end card -->
     </div>
-    <!-- end col -->
 </div>
 @endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+
+    $.ajaxSetup({
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+    });
+    let attendanceRefreshInterval;
+
+    function startAttendanceRefresh() {
+        refreshAttendanceLogs();
+        attendanceRefreshInterval = setInterval(refreshAttendanceLogs, 1000);
+    }
+
+    function stopAttendanceRefresh() {
+        clearInterval(attendanceRefreshInterval);
+    }
+
+    $('#startSession').click(function() {
+        const sessionType = $('input[name="sessionType"]:checked').val();
+        $(this).prop('disabled', true).html('<i class="ri-loader-4-line ri-spin me-1"></i> Starting...');
+        
+        $.ajax({
+            url: '{{ route("driver.start-session") }}',
+            method: 'POST',
+            data: {
+                bus_id: '{{ $activeBus ? $activeBus->bus_number : "" }}',
+                session_type: sessionType,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if(response.success) {
+                    location.reload();
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    title: 'Error',
+                    text: xhr.responseJSON.message,
+                    icon: 'error'
+                });
+                $('#startSession').prop('disabled', false)
+                    .html('<i class="ri-play-circle-line me-1"></i> Start Bus Session');
+            }
+        });
+    });
+
+    $('#endSession').click(function() {
+        Swal.fire({
+            title: 'End Session?',
+            text: 'Are you sure you want to end this bus session?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, end it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $(this).prop('disabled', true).html('<i class="ri-loader-4-line ri-spin me-1"></i> Ending...');
+                
+                $.ajax({
+                    url: '{{ route("driver.end-session") }}',
+                    method: 'POST',
+                    data: {
+                        bus_id: '{{ $activeBus ? $activeBus->bus_number : "" }}',
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if(response.success) {
+                            location.reload();
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: xhr.responseJSON.message,
+                            icon: 'error'
+                        });
+                        $('#endSession').prop('disabled', false)
+                            .html('<i class="ri-stop-circle-line me-1"></i> End Bus Session');
+                    }
+                });
+            }
+        });
+    });
+
+    function refreshAttendanceLogs() {
+        $.get('{{ route("driver.attendance-logs") }}', function(data) {
+            $('#attendanceLogsTable').html(data);
+        });
+    }
+
+    @if($currentSession)
+        startAttendanceRefresh();
+    @endif
+    $('#delayDuration').change(function() {
+        $('.custom-delay-input').toggleClass('d-none', $(this).val() !== 'custom');
+    });
+
+    // Handle delay reason selection
+    $('#delayReason').change(function() {
+        $('.other-reason-input').toggleClass('d-none', $(this).val() !== 'other');
+    });
+
+    // Handle delay submission
+    $('#submitDelay').click(function() {
+        const button = $(this);
+        const duration = $('#delayDuration').val() === 'custom' 
+            ? $('#customDelayDuration').val() 
+            : $('#delayDuration').val();
+        
+        const reason = $('#delayReason').val() === 'other'
+            ? $('#otherDelayReason').val()
+            : $('#delayReason option:selected').text();
+
+        if (!duration || (duration === 'custom' && !$('#customDelayDuration').val())) {
+            Swal.fire('Error', 'Please specify the delay duration', 'error');
+            return;
+        }
+
+        if (!reason || (reason === 'other' && !$('#otherDelayReason').val())) {
+            Swal.fire('Error', 'Please specify the delay reason', 'error');
+            return;
+        }
+
+        button.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin me-1"></i> Sending...');
+
+        $.ajax({
+            url: '{{ route("driver.report-delay") }}',
+            method: 'POST',
+            data: {
+                bus_id: '{{ $activeBus ? $activeBus->id : "" }}',
+                duration: duration,
+                reason: reason,
+                session_type: '{{ $currentSession ? $currentSession->session_type : "" }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#delayModal').modal('hide');
+                    Swal.fire({
+                        title: 'Notification Sent',
+                        text: 'Parents have been notified about the delay',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire('Error', xhr.responseJSON.message || 'Failed to send notification', 'error');
+            },
+            complete: function() {
+                button.prop('disabled', false)
+                    .html('<i class="ri-send-plane-line me-1"></i> Send Notification');
+            }
+        });
+    });
+});
+</script>
+
+<style>
+/* Dark mode specific styles */
+.dark-mode .alert-soft-info {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #93c5fd;
+}
+
+.dark-mode .alert-soft-warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #fcd34d;
+}
+
+.dark-mode .btn-outline-primary {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.dark-mode .btn-outline-primary:hover {
+    background-color: #3b82f6;
+    color: #fff;
+}
+
+.dark-mode .badge.bg-soft-primary {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #93c5fd;
+}
+
+.dark-mode .table-light {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .bus-info {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+</style>
+@endpush

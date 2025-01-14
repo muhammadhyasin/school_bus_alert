@@ -11,11 +11,17 @@ class AttendanceLog extends Model
         'bus_id',
         'scan_type',
         'scan_time',
-        'out_scan_time'
+        'out_scan_time',
+        'session',
     ];
 
     protected $casts = [
         'scan_time' => 'datetime'
+    ];
+
+    protected $dates = [
+        'scan_time',
+        'out_scan_time'
     ];
 
     // Relationship with Student
@@ -28,5 +34,19 @@ class AttendanceLog extends Model
     public function scopeToday($query)
     {
         return $query->whereDate('scan_time', today());
+    }
+    public function scopeMorning($query)
+    {
+        return $query->where('session', 'morning');
+    }
+
+    public function scopeEvening($query)
+    {
+        return $query->where('session', 'evening');
+    }
+    public function bus()
+
+    {
+        return $this->belongsTo(Bus::class);
     }
 }

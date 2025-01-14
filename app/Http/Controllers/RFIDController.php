@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceLog;
+use App\Models\Bus;
 use App\Models\Student;
+use App\Models\BusSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -12,12 +14,13 @@ class RFIDController extends Controller
 {
     public function handleRFIDScan(Request $request)
     {
-        // Add logging to debug the incoming request
-        Log::info('RFID Scan Request:', $request->all());
-
-        // Get RFID number and validate it's not empty
         $rfidNumber = $request->input('rfid_number');
-        $busId = $request->input('bus_id');
+        $busNumber = $request->input('bus_id'); // This is actually bus_number
+
+        Log::info('RFID Scan Request', [
+            'rfid' => $rfidNumber,
+            'bus_number' => $busNumber
+        ]);
 
         if (empty($rfidNumber)) {
             return response()->json([
@@ -26,19 +29,69 @@ class RFIDController extends Controller
             ], 400);
         }
 
-        // Store RFID in cache
-        Cache::put('last_rfid_scan', $rfidNumber, now()->addMinutes(1));
-
-        // Check if we're in adding student mode
-        if (!Cache::has('adding_student_mode')) {
-            return app(TeacherController::class)->handleStudentAttendance($rfidNumber, $busId);
+        // If in student registration mode, handle the RFID scan
+        if (Cache::has('adding_student_mode')) {
+            Cache::put('last_rfid_scan', $rfidNumber, now()->addMinutes(1));
+            return response()->json([
+                'success' => true,
+                'message' => 'RFID scan received for registration',
+                'rfid_number' => $rfidNumber,
+                'bus_number' => $busNumber
+            ]);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'RFID scan received for registration',
-            'rfid_number' => $rfidNumber, // Changed from 'rfid' to 'rfid_number' for consistency
-            'bus_id' => $busId
+        // Get bus ID from bus number
+        $bus = Bus::where('bus_number', $busNumber)->first();
+        
+        if (!$bus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid bus number',
+            ], 400);
+        }
+
+        // Check for active session using bus number
+        $activeSession = BusSession::getActiveSessionByBusNumber($busNumber);
+
+        Log::info('Active Session Check', [
+            'session' => $activeSession,
+            'bus_number' => $busNumber,
+            'bus_id' => $bus->id
         ]);
+
+        if (!$activeSession) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active bus session. Please start a session first.',
+            ], 400);
+        }
+
+        Cache::put('last_rfid_scan', $rfidNumber, now()->addMinutes(1));
+
+        try {
+            // Handle attendance with the active session type
+            $response = app(TeacherController::class)->handleStudentAttendance(
+                $rfidNumber, 
+                $bus->id, // Pass the actual bus_id
+                $activeSession->session_type
+            );
+
+            Log::info('Attendance Response', [
+                'response' => $response->getData()
+            ]);
+
+            return $response;
+
+        } catch (\Exception $e) {
+            Log::error('Attendance Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing attendance: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

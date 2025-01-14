@@ -2,122 +2,9 @@
 @section('content')
 <div class="row">
     <div class="col-12">
-        <div
-            class="page-title-box d-sm-flex align-items-center justify-content-between"
-        >
-            <h4 class="mb-sm-0">Dashboard</h4>
-
-            <div class="page-title-right">
-                <ol class="breadcrumb m-0">
-                    <li class="breadcrumb-item"><a href="javascript: void(0);"></a></li>
-                    <li class="breadcrumb-item active">Dashboard</li>
-                </ol>
-            </div>
-        </div>
     </div>
 </div>
 <!-- end page title -->
-
-<div class="row">
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-truncate font-size-14 mb-2">
-                            Starting time
-                        </p>
-                        <h4 class="mb-2">04:30</h4>
-                    </div>
-                    <div class="avatar-sm">
-                        <span
-                            class="avatar-title bg-light text-primary rounded-3"
-                        >
-                            <i class="ri-time-line font-size-24"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <!-- end cardbody -->
-        </div>
-        <!-- end card -->
-    </div>
-    <!-- end col -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-truncate font-size-14 mb-2">
-                            Call institution
-                        </p>
-                        <h4 class="mb-2">Office</h4>
-                    </div>
-                    <div class="avatar-sm">
-                        <span
-                            class="avatar-title bg-light text-primary rounded-3"
-                        >
-                            <i class="ri-phone-line font-size-24"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <!-- end cardbody -->
-        </div>
-        <!-- end card -->
-    </div>
-    <!-- end col -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-truncate font-size-14 mb-2">
-                            Bus Details
-                        </p>
-                        <div class="col-sm-6">
-                            <div class="dropdown">
-                                <button
-                                    class="btn dropdown-toggle"
-                                    type="button"
-                                    id="dropdownMenuButton"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false"
-                                    style="
-                                        background-color: rgb(16, 181, 236);
-                                        color: white;
-                                        border: none;
-                                    "
-                                >
-                                    List of Bus
-                                    <i class="mdi mdi-chevron-down"></i>
-                                </button>
-                                <div
-                                    class="dropdown-menu"
-                                    aria-labelledby="dropdownMenuButton"
-                                >
-                                    <a class="dropdown-item" href="#">BN-01</a>
-                                    <a class="dropdown-item" href="#">BN-02</a>
-                                    <a class="dropdown-item" href="#">BN-03</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="avatar-sm">
-                        <span
-                            class="avatar-title bg-light text-primary rounded-3"
-                        >
-                            <i class="ri-bus-line font-size-24"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <!-- end cardbody -->
-        </div>
-        <!-- end card -->
-    </div>
-    <!-- end col -->
-</div>
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
@@ -126,57 +13,242 @@
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                     <i class="ri-add-line align-middle me-1"></i> Add Student
                 </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBusModal">
+                    <i class="ri-bus-line align-middle me-1"></i> Add Bus
+                </button>
             </div>
         </div>
     </div>
 </div>
-<div class="card">
-    <div class="card-body">
-        <h4 class="card-title mb-4">Students List</h4>
-        <div class="table-responsive">
-            <table class="table table-centered mb-0 align-middle table-hover table-nowrap">
-                <thead class="table-light">
-                    <tr>
-                        <th>Name</th>
-                        <th>RFID Number</th>
-                        <th>Class</th>
-                        <th>Section</th>
-                        <th>Roll Number</th>
-                        <th>Parent</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($students as $student)
-                    <tr>
-                        <td><h6 class="mb-0">{{ $student->name }}</h6></td>
-                        <td>{{ $student->rfid_number }}</td>
-                        <td>{{ $student->class }}</td>
-                        <td>{{ $student->section }}</td>
-                        <td>{{ $student->roll_number }}</td>
-                        <td>{{ $student->parent->name }}</td>
-                        <td>
-                            <div class="font-size-13">
-                                <i class="ri-checkbox-blank-circle-fill font-size-10 
-                                    {{ $student->status ? 'text-success' : 'text-warning' }} align-middle me-2"></i>
-                                {{ $student->status ? 'Active' : 'Inactive' }}
+<!-- Add Bus Modal -->
+<div class="modal fade" id="addBusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Bus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ route('buses.store') }}" method="POST">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label">Bus Number</label>
+                        <input type="number" class="form-control @error('bus_number') is-invalid @enderror" 
+                               name="bus_number" value="{{ old('bus_number') }}" required>
+                        @error('bus_number')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Driver</label>
+                        <select class="form-select @error('driver_id') is-invalid @enderror" 
+                                name="driver_id">
+                            <option value="">Select Driver</option>
+                            @foreach($drivers as $driver)
+                                <option value="{{ $driver->id }}" 
+                                    {{ old('driver_id') == $driver->id ? 'selected' : '' }}>
+                                    {{ $driver->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('driver_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Bus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editStudentForm" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" id="editName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">RFID Number</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" 
+                                   name="rfid_number" id="editRfidNumber" required>
+                            <div class="input-group-append">
+                                <div class="form-check form-switch mt-2 ms-2">
+                                    <input class="form-check-input" type="checkbox" id="editScanModeSwitch">
+                                    <label class="form-check-label" for="editScanModeSwitch">Scan Mode</label>
+                                </div>
                             </div>
-                        </td>
-                        <td>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-primary edit-student" data-id="{{ $student->id }}">
-                                    <i class="ri-pencil-line"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger delete-student" data-id="{{ $student->id }}">
-                                    <i class="ri-delete-bin-line"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                        </div>
+                        <div id="editRfidStatus" class="mt-2"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Parent</label>
+                        <select class="form-select" name="parent_id" id="editParentId" required>
+                            <option value="">Select Parent</option>
+                            @foreach($parents as $parent)
+                                <option value="{{ $parent->id }}">{{ $parent->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Class</label>
+                            <input type="text" class="form-control" name="class" id="editClass">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Section</label>
+                            <input type="text" class="form-control" name="section" id="editSection">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Roll Number</label>
+                        <input type="text" class="form-control" name="roll_number" id="editRollNumber">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" name="address" id="editAddress"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" name="phone" id="editPhone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Exit Location</label>
+                        <select class="form-select" name="exit_location_id" id="editExitLocation">
+                            <option value="">Select Exit Location</option>
+                            @foreach($locationCards as $location)
+                                <option value="{{ $location->id }}">
+                                    {{ $location->location_name }} ({{ $location->rfid_number }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Update Student</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Students List</h4>
+                <div class="table-responsive">
+                    <table class="table table-centered mb-0 align-middle table-hover table-nowrap">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>RFID Number</th>
+                                <th>Class</th>
+                                <th>Section</th>
+                                <th>Roll Number</th>
+                                <th>Parent</th>
+                                <th>Exit Location</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($students as $student)
+                            <tr>
+                                <td><h6 class="mb-0">{{ $student->name }}</h6></td>
+                                <td>{{ $student->rfid_number }}</td>
+                                <td>{{ $student->class }}</td>
+                                <td>{{ $student->section }}</td>
+                                <td>{{ $student->roll_number }}</td>
+                                <td>{{ $student->parent->name }}</td>
+                                <td>
+                                    @if($student->exit_location_id)
+                                        {{ $student->exit_location_id }}
+                                    @else
+                                        <span class="text-muted">Not set</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="font-size-13">
+                                        <i class="ri-checkbox-blank-circle-fill font-size-10 
+                                            {{ $student->status ? 'text-success' : 'text-warning' }} align-middle me-2"></i>
+                                        {{ $student->status ? 'Active' : 'Inactive' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-primary edit-student" data-id="{{ $student->id }}">
+                                            <i class="ri-pencil-line"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-student" data-id="{{ $student->id }}">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Today's Attendance Log</h4>
+                <div class="table-responsive">
+                    <table class="table table-centered mb-0 align-middle table-hover table-nowrap">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Time</th>
+                                <th>Student Name</th>
+                                <th>Type</th>
+                                <th>Bus Number</th>
+                                <th>Session</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($attendanceLogs as $log)
+                            <tr>
+                                <td>{{ $log->created_at->format('h:i A') }}</td>
+                                <td>
+                                    <h6 class="mb-0">{{ $log->student->name }}</h6>
+                                </td>
+                                <td>{{ $log->scan_type }}</td>
+                                <td>{{ $log->bus_id }}</td>
+                                <td>{{ $log->session }}</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="text-center">No attendance records for today</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -288,133 +360,559 @@
         </div>
     </div>
 </div>
-<!-- end row -->
-
-<!-- end row -->
-
-<div class="row">
-    <!-- end col -->
-    <div class="col-xl-4">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title mb-4">Todays Attendance</h4>
-
-                <div class="row" style="display: flex">
-                    <div class="col-4" style="flex: 1">
-                        <div class="text-center mt-4">
-                            <h5>34</h5>
-                            <p class="mb-2 text-truncate">Present</p>
-                        </div>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Generate Fees</h5>
+        <form id="generateFeesForm">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Year</label>
+                        <select class="form-select" name="year" required>
+                            @php
+                                $currentYear = date('Y');
+                            @endphp
+                            @for($year = $currentYear; $year <= $currentYear + 2; $year++)
+                                <option value="{{ $year }}">{{ $year }}</option>
+                            @endfor
+                        </select>
                     </div>
-                    <!-- end col -->
-                    <div class="col-4" style="flex: 1">
-                        <div class="text-center mt-4">
-                            <h5>28</h5>
-                            <p class="mb-2 text-truncate">Abscent</p>
-                        </div>
-                    </div>
-                    <!-- end col -->
-                    <!-- <div class="col-4">
-                        <div class="text-center mt-4">
-                            <h5>9062</h5>
-                            <p class="mb-2 text-truncate">Last Month</p>
-                        </div>
-                    </div> -->
-                    <!-- end col -->
                 </div>
-                <!-- end row -->
-
-                <div class="mt-4">
-                    <div id="donut-chart" class="apex-charts"></div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Amount per Month</label>
+                        <input type="number" class="form-control" name="amount" value="1500" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            Generate Fees
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <!-- end card -->
+        </form>
     </div>
-    <!-- end col -->
+</div>
 </div>
 @push('scripts')
 <script>
 $.ajaxSetup({
     headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-    }
+        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+    },
 });
 
-$(document).ready(function() {
+$(document).ready(function () {
     let scanInterval;
-    
-    // Handle scan mode switch
-    $('#scanModeSwitch').change(function() {
-        const isChecked = $(this).is(':checked');
-        const rfidInput = $('#rfidInput');
-        
-        if (isChecked) {
-            // Start scanning mode
-            $.post('/start-adding-student', function(response) {
-                if(response.success) {
-                    rfidInput.attr('readonly', true);
-                    $('#rfidStatus').html('<div class="alert alert-info">Waiting for RFID scan...</div>');
-                    // Start polling for RFID
-                    scanInterval = setInterval(checkForRFID, 1000);
-                }
-            });
-        } else {
-            // Stop scanning mode
-            $.post('/cancel-adding-student', function(response) {
-                if(response.success) {
-                    rfidInput.attr('readonly', false);
-                    $('#rfidStatus').html('');
-                    clearInterval(scanInterval);
-                }
-            });
-        }
-    });
+    requestNotificationPermission();
+    let lastNotificationIds = []; // Add this
+    const notificationSound = new Audio('{{ asset("notify.wav") }}');
 
-    function checkForRFID() {
-        $.ajax({
-            url: '/check-last-rfid',
-            method: 'GET',
-            success: function(response) {
-                if (response.success && response.rfid_number) {
-                    // RFID found
-                    $('#rfidInput').val(response.rfid_number);
-                    $('#rfidStatus').html('<div class="alert alert-success">RFID scanned successfully!</div>');
-                    $('#scanModeSwitch').prop('checked', false).trigger('change');
-                }
-            },
-            error: function(xhr) {
-                if (xhr.status === 404) {
-                    // No new RFID scan found, continue polling
-                } else {
-                    $('#rfidStatus').html('<div class="alert alert-danger">Error checking RFID</div>');
-                }
+    function toggleNotificationSound() {
+        const currentState = localStorage.getItem("notificationSound");
+        if (currentState === "disabled") {
+            localStorage.setItem("notificationSound", "enabled");
+            return true;
+        } else {
+            localStorage.setItem("notificationSound", "disabled");
+            return false;
+        }
+    }
+
+    // Add notification settings button to your profile dropdown
+    $(".user-dropdown .dropdown-menu").append(`
+        <a class="dropdown-item" href="javascript:void(0)" onclick="requestNotificationPermission()">
+            <i class="ri-notification-line align-middle me-1"></i> 
+            Notification Settings
+        </a>
+    `);
+
+    // Function to handle scan mode switching
+    function handleScanMode(isEdit = false) {
+        const switchElement = isEdit
+            ? "#editScanModeSwitch"
+            : "#scanModeSwitch";
+        const inputElement = isEdit ? "#editRfidNumber" : "#rfidInput";
+        const statusElement = isEdit ? "#editRfidStatus" : "#rfidStatus";
+
+        $(switchElement).change(function () {
+            const isChecked = $(this).is(":checked");
+            const rfidInput = $(inputElement);
+
+            if (isChecked) {
+                $.post("/start-adding-student", function (response) {
+                    if (response.success) {
+                        rfidInput.attr("readonly", true);
+                        $(statusElement).html(
+                            '<div class="alert alert-info">Waiting for RFID scan...</div>'
+                        );
+                        scanInterval = setInterval(
+                            () => checkForRFID(isEdit),
+                            1000
+                        );
+                    }
+                });
+            } else {
+                $.post("/cancel-adding-student", function (response) {
+                    if (response.success) {
+                        rfidInput.attr("readonly", false);
+                        $(statusElement).html("");
+                        clearInterval(scanInterval);
+                    }
+                });
             }
         });
     }
 
-    // Clear interval when modal is closed
-    $('#addStudentModal').on('hidden.bs.modal', function () {
-        if($('#scanModeSwitch').is(':checked')) {
-            $.post('/cancel-adding-student', function() {
+    // Function to check for RFID scans
+    function checkForRFID(isEdit = false) {
+        const inputElement = isEdit ? "#editRfidNumber" : "#rfidInput";
+        const statusElement = isEdit ? "#editRfidStatus" : "#rfidStatus";
+        const switchElement = isEdit
+            ? "#editScanModeSwitch"
+            : "#scanModeSwitch";
+
+        $.ajax({
+            url: "/check-last-rfid",
+            method: "GET",
+            success: function (response) {
+                if (response.success && response.rfid_number) {
+                    $(inputElement).val(response.rfid_number);
+                    $(statusElement).html(
+                        '<div class="alert alert-success">RFID scanned successfully!</div>'
+                    );
+                    $(switchElement).prop("checked", false).trigger("change");
+                }
+            },
+            error: function (xhr) {
+                if (xhr.status !== 404) {
+                    $(statusElement).html(
+                        '<div class="alert alert-danger">Error checking RFID</div>'
+                    );
+                }
+            },
+        });
+    }
+
+    // Initialize scan mode for both forms
+    handleScanMode(false); // For add form
+    handleScanMode(true); // For edit form
+
+    // Handle modal closing
+    $("#addStudentModal, #editStudentModal").on("hidden.bs.modal", function () {
+        const isEditModal = $(this).attr("id") === "editStudentModal";
+        const switchElement = isEditModal
+            ? "#editScanModeSwitch"
+            : "#scanModeSwitch";
+        const statusElement = isEditModal ? "#editRfidStatus" : "#rfidStatus";
+
+        if ($(switchElement).is(":checked")) {
+            $.post("/cancel-adding-student", function () {
                 clearInterval(scanInterval);
-                $('#scanModeSwitch').prop('checked', false);
-                $('#rfidStatus').html('');
+                $(switchElement).prop("checked", false);
+                $(statusElement).html("");
             });
         }
     });
 
-    // Handle form submission
-    $('form').on('submit', function() {
+    // Handle form submissions
+    $("form").on("submit", function () {
         clearInterval(scanInterval);
     });
 
-    // Add error handling for AJAX requests
-    $(document).ajaxError(function(event, xhr, settings) {
-        if (xhr.status === 419) { // CSRF token mismatch
-            alert('Your session has expired. Please refresh the page.');
+    // Edit student handler
+    $(document).on("click", ".edit-student", function () {
+        let studentId = $(this).data("id");
+        $(this).html('<i class="ri-loader-line spinner"></i>');
+
+        $.ajax({
+            url: `/students/${studentId}/edit`,
+            method: "GET",
+            success: (data) => {
+                $("#editName").val(data.name);
+                $("#editRfidNumber").val(data.rfid_number);
+                $("#editParentId").val(data.parent_id);
+                $("#editClass").val(data.class);
+                $("#editSection").val(data.section);
+                $("#editRollNumber").val(data.roll_number);
+                $("#editAddress").val(data.address);
+                $("#editPhone").val(data.phone);
+                $("#editExitLocation").val(data.exit_location_id);
+
+                $("#editStudentForm").attr("action", `/students/${studentId}`);
+                $("#editStudentModal").modal("show");
+            },
+            error: (xhr) => {
+                console.error("Error fetching student data:", xhr);
+                alert("Error loading student data. Please try again.");
+            },
+            complete: () => {
+                $(this).html('<i class="ri-pencil-line"></i>');
+            },
+        });
+    });
+
+    // Edit bus handler
+    $(".edit-bus").click(function () {
+        let busId = $(this).data("id");
+        let busNumber = $(this).data("number");
+        let driverId = $(this).data("driver");
+
+        $("#editBusModal").modal("show");
+        $("#editBusForm").attr("action", `/buses/${busId}`);
+        $("#editBusNumber").val(busNumber);
+        $("#editDriverId").val(driverId);
+    });
+
+    // Delete bus handler
+    $(".delete-bus").click(function () {
+        if (confirm("Are you sure you want to delete this bus?")) {
+            let busId = $(this).data("id");
+            $.ajax({
+                url: `/buses/${busId}`,
+                type: "DELETE",
+                success: function () {
+                    location.reload();
+                },
+            });
         }
     });
+
+    // Delete student handler
+    $(document).on("click", ".delete-student", function () {
+        if (confirm("Are you sure you want to delete this student?")) {
+            let studentId = $(this).data("id");
+            $.ajax({
+                url: `/students/${studentId}`,
+                type: "DELETE",
+                success: function () {
+                    location.reload();
+                },
+            });
+        }
+    });
+
+    // Error handling for AJAX requests
+    $(document).ajaxError(function (event, xhr, settings) {
+        if (xhr.status === 419) {
+            alert("Your session has expired. Please refresh the page.");
+        }
+    });
+
+    let unreadCount = 0;
+
+    // Function to update notification dropdown
+    function updateNotificationDropdown(notifications) {
+        const notificationContainer = $("[data-simplebarr]");
+        notificationContainer.empty();
+        const soundEnabled =
+            localStorage.getItem("notificationSound") !== "disabled";
+        const soundToggleHtml = `
+            <div class="px-3 py-2 border-bottom">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="notificationSound" 
+                           ${soundEnabled ? "checked" : ""}>
+                    <label class="form-check-label" for="notificationSound">
+                        <i class="ri-volume-${
+                            soundEnabled ? "up" : "mute"
+                        }-line"></i>
+                        Notification Sound
+                    </label>
+                </div>
+            </div>
+        `;
+        notificationContainer.append(soundToggleHtml);
+
+        notifications.forEach((notification) => {
+            const icon = getNotificationIcon(notification.type);
+            const bgColor = getNotificationBgColor(notification.type);
+
+            const notificationHtml = `
+                <a href="javascript:void(0)" class="text-reset notification-item" data-id="${
+                    notification.id
+                }">
+                    <div class="d-flex">
+                        <div class="avatar-xs me-3">
+                            <span class="avatar-title ${bgColor} rounded-circle font-size-16">
+                                <i class="${icon}"></i>
+                            </span>
+                        </div>
+                        <div class="flex-1">
+                            <h6 class="mb-1">${getNotificationTitle(
+                                notification.type
+                            )}</h6>
+                            <div class="font-size-12 text-muted">
+                                <p class="mb-1">${notification.message}</p>
+                                <p class="mb-0"><i class="mdi mdi-clock-outline"></i> ${
+                                    notification.time
+                                }</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            `;
+            notificationContainer.append(notificationHtml);
+        });
+
+        // Update notification count
+        if (notifications.length > 0) {
+            $(".noti-dot").show();
+        } else {
+            $(".noti-dot").hide();
+        }
+    }
+
+    // Function to get notification icon
+    function getNotificationIcon(type) {
+        switch (type) {
+            case "entry":
+                return "ri-login-circle-line";
+            case "exit":
+                return "ri-logout-circle-line";
+            case "missed_stop":
+                return "ri-error-warning-line";
+            case "wrong_stop":
+                return "ri-alarm-warning-line";
+            case "session_start":
+                return "ri-play-circle-line";
+            case "session_end":
+                return "ri-stop-circle-line";
+            default:
+                return "ri-notification-line";
+        }
+    }
+
+    // Function to get notification background color
+    function getNotificationBgColor(type) {
+        switch (type) {
+            case "entry":
+                return "bg-success";
+            case "exit":
+                return "bg-info";
+            case "missed_stop":
+            case "wrong_stop":
+                return "bg-danger";
+            case "session_start":
+                return "bg-primary";
+            case "session_end":
+                return "bg-warning";
+            default:
+                return "bg-secondary";
+        }
+    }
+
+    // Function to get notification title
+    function getNotificationTitle(type) {
+        switch (type) {
+            case "entry":
+                return "Student Entry";
+            case "exit":
+                return "Student Exit";
+            case "missed_stop":
+                return "Missed Stop Alert";
+            case "wrong_stop":
+                return "Wrong Stop Alert";
+            case "session_start":
+                return "Session Started";
+            case "session_end":
+                return "Session Ended";
+            default:
+                return "Notification";
+        }
+    }
+
+    // Function to fetch notifications
+    function fetchNotifications() {
+        $.get('{{ route("notifications.latest") }}', function(response) {
+            if (response.success) {
+                // Check for new notifications by comparing with lastNotificationIds
+                const newNotifications = response.notifications.filter(notification => 
+                    !lastNotificationIds.includes(notification.id)
+                );
+
+                // If there are new notifications, check for missed stops
+                if (newNotifications.length > 0) {
+                    // Only play sound if there's a missed stop notification
+                    const hasMissedStop = newNotifications.some(notification => 
+                        notification.type === 'missed_stop' || notification.type === 'wrong_stop'
+                    );
+
+                    if (hasMissedStop) {
+                        playNotificationSound();
+                    }
+                    
+                    newNotifications.forEach(notification => {
+                        // Show browser notification for all new notifications
+                        showBrowserNotification(notification);
+                        
+                        // Show SweetAlert only for critical notifications
+                        if (notification.type === 'missed_stop' || notification.type === 'wrong_stop') {
+                            Swal.fire({
+                                title: getNotificationTitle(notification.type),
+                                text: notification.message,
+                                icon: 'warning',
+                                confirmButtonColor: '#d33',
+                                confirmButtonText: 'Acknowledge',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    $.post(`/notifications/${notification.id}/read`, function(response) {
+                                        if (response.success) {
+                                            $(`.notification-item[data-id="${notification.id}"]`).fadeOut();
+                                            Swal.fire({
+                                                title: 'Acknowledged',
+                                                text: 'Alert has been marked as read',
+                                                icon: 'success',
+                                                timer: 1500,
+                                                showConfirmButton: false
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Update lastNotificationIds with current notification IDs
+                lastNotificationIds = response.notifications.map(n => n.id);
+
+                // Update the notification dropdown with all notifications
+                updateNotificationDropdown(response.notifications);
+            }
+        });
+    }
+
+    function playNotificationSound() {
+        if (localStorage.getItem("notificationSound") !== "disabled") {
+            notificationSound.play().catch(function (error) {
+                console.log("Sound play failed:", error);
+            });
+        }
+    }
+    // Mark notification as read when clicked
+    $(document).on("click", ".notification-item", function () {
+        const notificationId = $(this).data("id");
+        $.post(`/notifications/${notificationId}/read`);
+        $(this).fadeOut();
+    });
+
+    // Mark all as read
+    $(".mark-all-read").click(function () {
+        $.post('{{ route("notifications.markAllRead") }}', function () {
+            fetchNotifications();
+        });
+    });
+
+    // Initial fetch and set interval
+    fetchNotifications();
+    setInterval(fetchNotifications, 1000);
+
+    function requestNotificationPermission() {
+        if (!("Notification" in window)) {
+            console.log("This browser does not support desktop notification");
+            return;
+        }
+
+        if (
+            Notification.permission !== "granted" &&
+            Notification.permission !== "denied"
+        ) {
+            Swal.fire({
+                title: "Enable Notifications?",
+                text: "We'd like to send you notifications for important alerts",
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonText: "Yes, Enable!",
+                cancelButtonText: "No, Thanks",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Notification.requestPermission().then(function (
+                        permission
+                    ) {
+                        if (permission === "granted") {
+                            Swal.fire(
+                                "Enabled!",
+                                "You will now receive notifications",
+                                "success"
+                            );
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    // Function to show browser notification
+    function showBrowserNotification(notification) {
+        if (Notification.permission === "granted") {
+            const icon = getNotificationIcon(notification.type);
+            const title = getNotificationTitle(notification.type);
+
+            const browserNotification = new Notification(title, {
+                body: notification.message,
+                icon: "/images/notification-icon.png", // Add your icon path
+                badge: "/images/notification-badge.png", // Add your badge path
+                tag: `notification-${notification.id}`,
+                requireInteraction:
+                    notification.type === "missed_stop" ||
+                    notification.type === "wrong_stop",
+            });
+
+            browserNotification.onclick = function () {
+                window.focus();
+                browserNotification.close();
+
+                // Mark notification as read when clicked
+                $.post(`/notifications/${notification.id}/read`).then(() => {
+                    fetchNotifications();
+                });
+
+                // Show SweetAlert for critical notifications
+                if (
+                    notification.type === "missed_stop" ||
+                    notification.type === "wrong_stop"
+                ) {
+                    Swal.fire({
+                        title: title,
+                        text: notification.message,
+                        icon: "warning",
+                        confirmButtonColor: "#d33",
+                        confirmButtonText: "Acknowledge",
+                    });
+                }
+            };
+        }
+    }
+    $('#generateFeesForm').submit(function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const submitBtn = form.find('button[type="submit"]');
+    
+    submitBtn.prop('disabled', true)
+        .html('<i class="ri-loader-4-line ri-spin"></i> Generating...');
+
+    $.ajax({
+        url: '{{ route("admin.generate-fees") }}',
+        method: 'POST',
+        data: form.serialize(),
+        success: function(response) {
+            if (response.success) {
+                Swal.fire('Success', 'Fees generated successfully', 'success');
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('Error', 'Failed to generate fees', 'error');
+        },
+        complete: function() {
+            submitBtn.prop('disabled', false).html('Generate Fees');
+        }
+    });
+});
 });
 </script>
 @endpush

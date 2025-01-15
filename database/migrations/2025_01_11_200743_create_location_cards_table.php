@@ -15,13 +15,6 @@ class CreateLocationCardsTable extends Migration
             $table->timestamps();
         });
 
-        // Add location_id to students table for exit location
-        Schema::table('students', function (Blueprint $table) {
-            $table->foreignId('exit_location_id')
-                  ->nullable()
-                  ->constrained('location_cards')
-                  ->onDelete('set null');
-        });
     }
 
     public function down()

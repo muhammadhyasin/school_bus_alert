@@ -53,9 +53,7 @@
         </div>
     </div>
     <!-- Expected Arrival -->
-    <audio id="notificationSound" preload="auto">
-        <source src="{{ asset('notify.wav') }}" type="audio/wav">
-    </audio>
+
     <!-- Driver Details -->
     @if(isset($status['bus_details']) && $status['bus_details'])
     <div class="col-xl-3 col-md-6">
@@ -189,6 +187,16 @@
     <div class="col-12 mb-3">
         <h5>Important Contacts</h5>
     </div>
+    <!-- Add these audio elements -->
+<audio id="missedStopSound" preload="auto">
+    <source src="{{ asset('missed_stop.wav') }}" type="audio/wav">
+</audio>
+<audio id="missedReturnSound" preload="auto">
+    <source src="{{ asset('missed_return.wav') }}" type="audio/wav">
+</audio>
+<audio id="busDelaySound" preload="auto">
+    <source src="{{ asset('bus_delay.wav') }}" type="audio/wav">
+</audio>
     
     <!-- Teacher Contact -->
     <div class="col-xl-3 col-md-6">
@@ -241,12 +249,27 @@
 @push('scripts')
 <script>
 $(document).ready(function () {
+    preloadSounds();
     // Setup AJAX headers
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
+    function preloadSounds() {
+    const sounds = {
+        default: '{{ asset("notify.wav") }}',
+        missed_stop: '{{ asset("missed_stop.wav") }}',
+        missed_return: '{{ asset("missed_return.wav") }}',
+        bus_delay: '{{ asset("bus_delay.wav") }}'
+    };
+
+    Object.values(sounds).forEach(soundUrl => {
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audio.src = soundUrl;
+    });
+}
 
     // Initialize audio and settings
     const notificationSound = new Audio('{{ asset("notify.wav") }}');
@@ -261,34 +284,6 @@ $(document).ready(function () {
         if (!localStorage.getItem("notificationSound")) {
             localStorage.setItem("notificationSound", "enabled");
         }
-
-        // Add notification settings to user dropdown
-        $(".user-dropdown .dropdown-menu").append(`
-            <div class="dropdown-item d-flex justify-content-between align-items-center">
-                <span>
-                    <i class="ri-notification-line align-middle me-1"></i> 
-                    Notification Sound
-                </span>
-                <div class="form-check form-switch mb-0">
-                    <input class="form-check-input" type="checkbox" id="notificationSoundToggle"
-                           ${
-                               localStorage.getItem("notificationSound") ===
-                               "enabled"
-                                   ? "checked"
-                                   : ""
-                           }>
-                </div>
-            </div>
-            <a class="dropdown-item" href="javascript:void(0)" onclick="requestNotificationPermission()">
-                <i class="ri-bell-line align-middle me-1"></i> 
-                Browser Notifications
-            </a>
-        `);
-
-        // Handle sound toggle
-        $("#notificationSoundToggle").on("change", function () {
-            toggleNotificationSound();
-        });
     }
 
     function toggleNotificationSound() {
@@ -313,19 +308,37 @@ $(document).ready(function () {
         });
     }
 
-    function playNotificationSound() {
-
+    function playNotificationSound(notificationType) {
     if (localStorage.getItem('notificationSound') === 'enabled') {
-        // Create a new Audio instance each time to ensure it plays on iOS
-        const sound = new Audio('{{ asset("notify.wav") }}');
-        // Try to play the sound
+        let soundUrl;
+        
+        // Select sound based on notification type
+        switch(notificationType) {
+            case 'missed_stop':
+                soundUrl = '{{ asset("missed_stop.wav") }}';
+                break;
+            case 'missed_return':
+                soundUrl = '{{ asset("missed_return.wav") }}';
+                break;
+            case 'bus_delay':
+                soundUrl = '{{ asset("bus_delay.wav") }}';
+                break;
+            default:
+                soundUrl = '{{ asset("notify.wav") }}';
+        }
+
+        const sound = new Audio(soundUrl);
+        
+        // Play sound with error handling
         const playPromise = sound.play();
-            if (playPromise !== undefined) {
-                playPromise.catch((error) => {
-                    console.log("Sound play failed:", error);
-                    // If autoplay is blocked, try playing on user interaction
-                    $(document).one('click touchstart', function() {
-                        sound.play().catch(error => console.log("Sound play failed after interaction:", error));
+        if (playPromise !== undefined) {
+            playPromise.catch((error) => {
+                console.log("Sound play failed:", error);
+                // Try playing on user interaction for iOS
+                $(document).one('click touchstart', function() {
+                    sound.play().catch(error => 
+                        console.log("Sound play failed after interaction:", error)
+                    );
                 });
             });
         }
@@ -431,13 +444,7 @@ return [
     }
 
     function requestNotificationPermission() {
-        if (isIOS()) {
-            // Just ensure sound notifications are enabled
-            if (!localStorage.getItem('notificationSound')) {
-                localStorage.setItem('notificationSound', 'enabled');
-            }
-        return;
-        }
+        
         if (!("Notification" in window)) {
             Swal.fire({
                 title: "Browser Not Supported",
@@ -696,42 +703,51 @@ function refreshNotifications() {
     $.get('{{ route("parent.notifications") }}')
         .done(function(response) {
             if (response.success) {
-                // Check for new notifications
-                const newNotifications = response.notifications.filter(
-                    notification => !lastNotificationIds.includes(notification.id)
+                // Check for new notifications by comparing with lastNotificationIds
+                const newNotifications = response.notifications.filter(notification => 
+                    !lastNotificationIds.includes(notification.id)
                 );
 
+                // If there are new notifications, check for missed stops
                 if (newNotifications.length > 0) {
-                    // Check for critical notifications
-                    const hasCriticalNotification = newNotifications.some(
-                        notification => ['missed_stop', 'wrong_stop'].includes(notification.type)
+                    // Only play sound if there's a missed stop notification
+                    const hasMissedStop = newNotifications.some(notification => 
+                        notification.type === 'missed_stop' || notification.type === 'wrong_stop'
                     );
 
-                    // Play sound for critical notifications
-                    if (hasCriticalNotification) {
-                        playNotificationSound();
+                    if (hasMissedStop) {
+                        playNotificationSound('missed_stop');
+                    } else {
+                        // Check for other notification types that need sounds
                         newNotifications.forEach(notification => {
-                            if (['missed_stop', 'wrong_stop'].includes(notification.type)) {
-                                showCriticalAlert(notification);
+                            if (notification.type === 'missed_return') {
+                                playNotificationSound('missed_return');
+                            } else if (notification.type === 'bus_delay') {
+                                playNotificationSound('bus_delay');
                             }
                         });
                     }
+                    
+                    newNotifications.forEach(notification => {
+                        // Show browser notification for all new notifications
+                        showBrowserNotification(notification);
+                        
+                        // Show SweetAlert only for critical notifications
+                        if (notification.type === 'missed_stop' || notification.type === 'wrong_stop') {
+                            showCriticalAlert(notification);
+                        }
+                    });
 
                     // Update UI
                     $('.notification-container').empty();
                     response.notifications.forEach(notification => {
                         addNotificationToUI(notification);
                     });
-
-                    // Show browser notifications if permitted
-                    if ("Notification" in window && Notification.permission === "granted") {
-                        newNotifications.forEach(showBrowserNotification);
-                    }
                 } else if (response.notifications.length === 0) {
                     showEmptyState();
                 }
 
-                // Update tracking
+                // Update lastNotificationIds with current notification IDs
                 lastNotificationIds = response.notifications.map(n => n.id);
             }
         })

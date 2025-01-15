@@ -8,42 +8,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('students', function (Blueprint $table) {
-            // Add new columns if they don't exist
-            if (!Schema::hasColumn('students', 'class')) {
-                $table->string('class')->nullable();
-            }
-            if (!Schema::hasColumn('students', 'section')) {
-                $table->string('section')->nullable();
-            }
-            if (!Schema::hasColumn('students', 'roll_number')) {
-                $table->string('roll_number')->nullable();
-            }
-            if (!Schema::hasColumn('students', 'address')) {
-                $table->text('address')->nullable();
-            }
-            if (!Schema::hasColumn('students', 'phone')) {
-                $table->string('phone')->nullable();
-            }
-            if (!Schema::hasColumn('students', 'status')) {
-                $table->boolean('status')->default(true);
-            }
+        Schema::create('students', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('rfid_number')->nullable();
+            $table->unsignedBigInteger('parent_id')->nullable();
+            $table->string('class')->nullable();
+            $table->string('section')->nullable();
+            $table->string('roll_number')->nullable();
+            $table->text('address')->nullable();
+            $table->string('phone')->nullable();
+            $table->boolean('status')->default(true);
+            $table->unsignedBigInteger('exit_location_id')->nullable();
+
+
+            $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::table('students', function (Blueprint $table) {
-            // Remove the columns if they exist
-            $table->dropColumn([
-                'class',
-                'section',
-                'roll_number',
-                'address',
-                'phone',
-                'has_exited',
-                'status'
-            ]);
-        });
+        Schema::dropIfExists('students');
     }
 };

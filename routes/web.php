@@ -94,5 +94,6 @@ Route::post('/parent/fees/pay', [ParentController::class, 'processPayment'])->na
 Route::post('/fees/generate', [TeacherController::class, 'generateFees'])->name('admin.generate-fees');
 
 Route::resource('buses', BusController::class);
+Route::view('/offline', 'offline');
 
 require __DIR__.'/auth.php';

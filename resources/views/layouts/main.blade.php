@@ -11,6 +11,113 @@
         <!-- App favicon -->
         <link rel="shortcut icon" href="/images/favicon.ico">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        @laravelPWA
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Register Service Worker
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/serviceworker.js')
+                        .then(function(registration) {
+                            console.log('ServiceWorker registration successful');
+                            requestNotificationPermission();
+                        })
+                        .catch(function(err) {
+                            console.log('ServiceWorker registration failed: ', err);
+                        });
+                }
+            
+                // Request notification permission
+                function requestNotificationPermission() {
+                    if ('Notification' in window) {
+                        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                            Swal.fire({
+                                title: 'Enable Notifications?',
+                                text: "We'll notify you about important bus updates",
+                                icon: 'info',
+                                showCancelButton: true,
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33',
+                                confirmButtonText: 'Yes, enable!'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    Notification.requestPermission()
+                                        .then(function(permission) {
+                                            if (permission === 'granted') {
+                                                showTestNotification();
+                                            }
+                                        });
+                                }
+                            });
+                        }
+                    }
+                }
+            
+                // Show a test notification
+                function showTestNotification() {
+                    if (Notification.permission === 'granted') {
+                        const notification = new Notification('Bus Tracker', {
+                            body: 'Notifications enabled successfully!',
+                            icon: '/images/icons/icon-192x192.png',
+                            badge: '/images/icons/icon-72x72.png',
+                            vibrate: [100, 50, 100]
+                        });
+                    }
+                }
+            
+                // Function to show notification with sound
+                function showNotificationWithSound(title, message, soundFile = '/notify.wav') {
+                    if (Notification.permission === 'granted') {
+                        const notification = new Notification(title, {
+                            body: message,
+                            icon: '/images/icons/icon-192x192.png',
+                            badge: '/images/icons/icon-72x72.png',
+                            vibrate: [100, 50, 100],
+                            silent: true // We'll handle the sound manually
+                        });
+            
+                        // Play sound
+                        const audio = new Audio(soundFile);
+                        const playPromise = audio.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(error => {
+                                console.log('Audio playback failed:', error);
+                            });
+                        }
+                    }
+                }
+            
+                // Handle background audio context
+                let audioContext;
+                document.addEventListener('visibilitychange', function() {
+                    if (document.hidden) {
+                        // Create or resume AudioContext when page is hidden
+                        if (!audioContext) {
+                            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        }
+                        audioContext.resume();
+                    }
+                });
+            
+                // Example of how to use the notification function in your code
+                window.showBusNotification = function(type, message) {
+                    let soundFile;
+                    switch(type) {
+                        case 'missed_stop':
+                            soundFile = '/missed_stop.wav';
+                            break;
+                        case 'missed_return':
+                            soundFile = '/missed_return.wav';
+                            break;
+                        case 'bus_delay':
+                            soundFile = '/bus_delay.wav';
+                            break;
+                        default:
+                            soundFile = '/notify.wav';
+                    }
+                    showNotificationWithSound('Bus Tracker', message, soundFile);
+                };
+            });
+            </script>
 
         
 
@@ -56,6 +163,38 @@
                 border-bottom: none;
             }
             </style>
+            <script>
+                let deferredPrompt;
+        
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    
+                    // Show the install button
+                    const installButton = document.getElementById('installPwa');
+                    if (installButton) {
+                        installButton.style.display = 'block';
+                        
+                        installButton.addEventListener('click', async () => {
+                            if (deferredPrompt) {
+                                deferredPrompt.prompt();
+                                const { outcome } = await deferredPrompt.userChoice;
+                                console.log(`User response: ${outcome}`);
+                                deferredPrompt = null;
+                                installButton.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+        
+                // Hide button if app is already installed
+                window.addEventListener('appinstalled', () => {
+                    const installButton = document.getElementById('installPwa');
+                    if (installButton) {
+                        installButton.style.display = 'none';
+                    }
+                });
+            </script>
         
 
     </head>
@@ -97,12 +236,9 @@
                         </button>
 
                         <!-- App Search-->
-                        <form class="app-search d-none d-lg-block">
-                            <div class="position-relative">
-                                <input type="text" class="form-control" placeholder="Search...">
-                                <span class="ri-search-line"></span>
-                            </div>
-                        </form>
+                        <button id="installPwa" style="display: none;" class="btn btn-sm">
+                            <i class="ri-download-line me-1"></i> Install App
+                        </button>
                     </div>
 
                     <div class="d-flex">

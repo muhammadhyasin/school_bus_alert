@@ -25,6 +25,16 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-xl-12">
+                        <div id="map" style="height: 300px; width: 100%; margin-bottom: 20px; border-radius: 8px;"></div>
+                        @if($currentSession)
+                            <div id="locationStatus" class="alert alert-info">
+                                <i class="ri-map-pin-line"></i> Initializing location services...
+                                <br>
+                                <small class="text-muted">Waiting for GPS signal...</small>
+                            </div>
+                        @endif
+                    </div>
 
                     <div class="bus-session-controls">
                         @if(!$currentSession)
@@ -166,6 +176,28 @@
         </div>
     </div>
 </div>
+<style>
+    #map {
+    height: 300px !important;
+    width: 100% !important;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+#locationStatus {
+    border-left-width: 4px;
+    margin-bottom: 20px;
+}
+
+#locationStatus.alert-danger {
+    border-left-color: #dc3545;
+}
+
+#locationStatus.alert-success {
+    border-left-color: #198754;
+}
+</style>
 @endsection
 
 @push('scripts')
@@ -177,7 +209,212 @@ $(document).ready(function() {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
-    let attendanceRefreshInterval;
+    let map, marker, watchId;
+    let locationPermissionGranted = false;
+    
+    // Initialize location tracking system
+    async function initializeLocationSystem() {
+        try {
+            // First, show permission request dialog
+            const result = await Swal.fire({
+                title: 'Location Access Required',
+                html: `
+                    <div class="text-left">
+                        <p>This app needs to access your location to:</p>
+                        <ul>
+                            <li>Track the bus location</li>
+                            <li>Update parents about bus location</li>
+                            <li>Ensure student safety</li>
+                        </ul>
+                    </div>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Enable Location',
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!result.isConfirmed) {
+                return false;
+            }
+
+            // Request location permission
+            const position = await getCurrentPosition();
+            locationPermissionGranted = true;
+            
+            // Initialize map with current position
+            initializeMap(position.coords.latitude, position.coords.longitude);
+            
+            // Start continuous tracking
+            startLocationTracking();
+            
+            return true;
+        } catch (error) {
+            console.error('Location initialization error:', error);
+            handleLocationError(error);
+            return false;
+        }
+    }
+
+    // Get current position with promise wrapper
+    function getCurrentPosition() {
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                resolve,
+                reject,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        });
+    }
+
+    // Initialize Google Map
+    function initializeMap(lat, lng) {
+        const mapOptions = {
+            zoom: 15,
+            center: { lat, lng },
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            zoomControl: true,
+            mapTypeControl: false,
+            streetViewControl: false
+        };
+        
+        map = new google.maps.Map(document.getElementById('map'), mapOptions);
+        
+        marker = new google.maps.Marker({
+            map: map,
+            position: { lat, lng },
+            icon: {
+                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                scale: 5
+            }
+        });
+    }
+
+    // Start continuous location tracking
+    function startLocationTracking() {
+        watchId = navigator.geolocation.watchPosition(
+            handleLocationSuccess,
+            handleLocationError,
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+
+    // Handle successful location update
+    function handleLocationSuccess(position) {
+        const { latitude, longitude, accuracy } = position.coords;
+        
+        // Update map and marker
+        const latLng = new google.maps.LatLng(latitude, longitude);
+        marker.setPosition(latLng);
+        map.setCenter(latLng);
+        
+        // Update status
+        updateLocationStatus(`Location active (Accuracy: ${Math.round(accuracy)}m)`);
+        
+        // Send to server
+        sendLocationToServer(latitude, longitude);
+    }
+
+    // Handle location errors
+    function handleLocationError(error) {
+        let message;
+        switch (error.code) {
+            case 1: // PERMISSION_DENIED
+                message = 'Please enable location access in your device settings';
+                showLocationSettings();
+                break;
+            case 2: // POSITION_UNAVAILABLE
+                message = 'Location signal not found. Please check your GPS settings';
+                break;
+            case 3: // TIMEOUT
+                message = 'Location request timed out. Retrying...';
+                break;
+            default:
+                message = `Location error: ${error.message}`;
+        }
+        
+        updateLocationStatus(message, 'error');
+    }
+
+    // Show location settings instructions
+    function showLocationSettings() {
+        Swal.fire({
+            title: 'Location Access Required',
+            html: `
+                <div style="text-align: left">
+                    <p>Please follow these steps:</p>
+                    <ol>
+                        <li>Open your device settings</li>
+                        <li>Go to Location settings</li>
+                        <li>Enable Location services</li>
+                        <li>Return to this app</li>
+                        <li>Refresh the page</li>
+                    </ol>
+                </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Open Settings',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (/Android/i.test(navigator.userAgent)) {
+                    window.location.href = 'intent://settings/location#Intent;scheme=android-app;end';
+                } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                    window.location.href = 'app-settings:location';
+                }
+            }
+        });
+    }
+
+    // Update location status display
+    function updateLocationStatus(message, type = 'info') {
+        const statusDiv = $('#locationStatus');
+        const timestamp = new Date().toLocaleTimeString();
+        
+        statusDiv.removeClass('alert-info alert-warning alert-danger')
+            .addClass(`alert-${type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info'}`);
+        
+        statusDiv.html(`
+            <div class="d-flex align-items-center">
+                <i class="ri-map-pin-line me-2"></i>
+                <div>
+                    ${message}
+                    <small class="d-block text-muted">Last updated: ${timestamp}</small>
+                </div>
+            </div>
+        `);
+    }
+
+    // Send location to server
+    function sendLocationToServer(latitude, longitude) {
+        $.ajax({
+            url: '{{ route("driver.update-location") }}',
+            method: 'POST',
+            data: {
+                latitude,
+                longitude,
+                session_id: '{{ $currentSession ? $currentSession->id : "" }}',
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.studentsUpdated) {
+                    refreshAttendanceLogs();
+                }
+            },
+            error: function(xhr) {
+                console.error('Server update error:', xhr);
+            }
+        });
+    }
 
     function startAttendanceRefresh() {
         refreshAttendanceLogs();
@@ -188,36 +425,79 @@ $(document).ready(function() {
         clearInterval(attendanceRefreshInterval);
     }
 
-    $('#startSession').click(function() {
-        const sessionType = $('input[name="sessionType"]:checked').val();
-        $(this).prop('disabled', true).html('<i class="ri-loader-4-line ri-spin me-1"></i> Starting...');
+    function refreshAttendanceLogs() {
+        $.get('{{ route("driver.attendance-logs") }}', function(data) {
+            $('#attendanceLogsTable').html(data);
+        });
+    }
+
+    function startAttendanceRefresh() {
+        refreshAttendanceLogs();
+        attendanceRefreshInterval = setInterval(refreshAttendanceLogs, 1000);
+    }
+
+    function stopAttendanceRefresh() {
+        clearInterval(attendanceRefreshInterval);
+    }
+
+    $('#startSession').click(async function(e) {
+        e.preventDefault();
         
-        $.ajax({
-            url: '{{ route("driver.start-session") }}',
-            method: 'POST',
-            data: {
-                bus_id: '{{ $activeBus ? $activeBus->bus_number : "" }}',
-                session_type: sessionType,
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                if(response.success) {
-                    location.reload();
+        // First request location permission
+        const locationEnabled = await initializeLocationSystem();
+        if (!locationEnabled) {
+            return;
+        }
+        
+        const button = $(this);
+        const sessionType = $('input[name="sessionType"]:checked').val();
+        
+        requestLocationPermission().then(() => {
+            button.prop('disabled', true)
+                .html('<i class="ri-loader-4-line ri-spin me-1"></i> Starting...');
+            
+            $.ajax({
+                url: '{{ route("driver.start-session") }}',
+                method: 'POST',
+                data: {
+                    bus_id: '{{ $activeBus ? $activeBus->bus_number : "" }}',
+                    session_type: sessionType,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if(response.success) {
+                        location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: xhr.responseJSON.message,
+                        icon: 'error'
+                    });
+                    button.prop('disabled', false)
+                        .html('<i class="ri-play-circle-line me-1"></i> Start Bus Session');
                 }
-            },
-            error: function(xhr) {
-                Swal.fire({
-                    title: 'Error',
-                    text: xhr.responseJSON.message,
-                    icon: 'error'
-                });
-                $('#startSession').prop('disabled', false)
-                    .html('<i class="ri-play-circle-line me-1"></i> Start Bus Session');
-            }
+            });
+        }).catch(() => {
+            Swal.fire({
+                title: 'Location Required',
+                text: 'Location access is required to start a bus session',
+                icon: 'error'
+            });
         });
     });
 
+    @if($currentSession)
+        initializeLocationSystem();
+    @endif
+
+
     $('#endSession').click(function() {
+        if (watchId) {
+            navigator.geolocation.clearWatch(watchId);
+            updateLocationStatus('Location tracking stopped');
+        }
         Swal.fire({
             title: 'End Session?',
             text: 'Are you sure you want to end this bus session?',

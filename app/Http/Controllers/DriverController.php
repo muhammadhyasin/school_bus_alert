@@ -188,4 +188,64 @@ class DriverController extends Controller
             'message' => 'Delay notification sent successfully'
         ]);
     }
+    public function updateLocation(Request $request)
+    {
+        $session = BusSession::findOrFail($request->session_id);
+        $latitude = $request->latitude;
+        $longitude = $request->longitude;
+
+        // Check if any students' locations are passed
+        $studentsUpdated = $this->checkStudentLocations($session, $latitude, $longitude);
+
+        return response()->json([
+            'success' => true,
+            'studentsUpdated' => $studentsUpdated
+        ]);
+    }
+
+    private function checkStudentLocations($session, $latitude, $longitude)
+    {
+        $studentsUpdated = false;
+        $students = $session->students()
+                        ->whereNull('picked_up_at')
+                        ->get();
+
+        foreach ($students as $student) {
+            // Calculate distance between bus and student's location
+            $distance = $this->calculateDistance(
+                $latitude,
+                $longitude,
+                $student->pickup_latitude,
+                $student->pickup_longitude
+            );
+
+            // If bus is within 50 meters of student's location
+            if ($distance <= 0.05) {
+                $student->update([
+                    'picked_up_at' => now(),
+                    'status' => 'picked_up'
+                ]);
+                $studentsUpdated = true;
+            }
+        }
+
+        return $studentsUpdated;
+    }
+
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $R = 6371; // Earth's radius in km
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat/2) * sin($dLat/2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon/2) * sin($dLon/2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $d = $R * $c; // Distance in km
+
+        return $d;
+    }
 }

@@ -38,7 +38,7 @@ Route::middleware('auth')->group(function () {
 
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    // Basic CRUD routes for students
+    // Basic CRUD routes for teacher
     Route::get('/teacher', [StudentController::class, 'index'])->name('students.index');
     Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
     Route::post('/students', [StudentController::class, 'store'])->name('students.store');
@@ -92,6 +92,8 @@ Route::post('/driver/report-delay', [DriverController::class, 'reportDelay'])->n
 Route::get('/parent/fees', [ParentController::class, 'getFees'])->name('parent.fees');
 Route::post('/parent/fees/pay', [ParentController::class, 'processPayment'])->name('parent.fees.pay');
 Route::post('/fees/generate', [TeacherController::class, 'generateFees'])->name('admin.generate-fees');
+
+Route::post('/driver/update-location', 'DriverController@updateLocation')->name('driver.update-location');
 
 Route::resource('buses', BusController::class);
 Route::view('/offline', 'offline');

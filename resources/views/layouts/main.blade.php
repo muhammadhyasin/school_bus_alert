@@ -2,7 +2,9 @@
 <html lang="en">
 
     <head>
-        
+        <!-- Add this in your layout file -->
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8tPXoTNT1-mQt0UOHVYnXlJh4NI1qDe4" async defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <meta charset="utf-8" />
         <title>Dashboard</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">

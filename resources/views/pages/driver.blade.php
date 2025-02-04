@@ -211,6 +211,7 @@ $(document).ready(function() {
     });
     let map, marker, watchId;
     let locationPermissionGranted = false;
+    let attendanceRefreshInterval;
     
     // Initialize location tracking system
     async function initializeLocationSystem() {
@@ -421,9 +422,7 @@ $(document).ready(function() {
         attendanceRefreshInterval = setInterval(refreshAttendanceLogs, 1000);
     }
 
-    function stopAttendanceRefresh() {
-        clearInterval(attendanceRefreshInterval);
-    }
+    
 
     function refreshAttendanceLogs() {
         $.get('{{ route("driver.attendance-logs") }}', function(data) {
@@ -440,19 +439,20 @@ $(document).ready(function() {
         clearInterval(attendanceRefreshInterval);
     }
 
+    // Replace your startSession click handler with this:
     $('#startSession').click(async function(e) {
         e.preventDefault();
-        
-        // First request location permission
-        const locationEnabled = await initializeLocationSystem();
-        if (!locationEnabled) {
-            return;
-        }
-        
         const button = $(this);
         const sessionType = $('input[name="sessionType"]:checked').val();
-        
-        requestLocationPermission().then(() => {
+
+        try {
+            // First request location permission
+            const locationEnabled = await initializeLocationSystem();
+            if (!locationEnabled) {
+                return;
+            }
+
+            // If location is enabled, start the session
             button.prop('disabled', true)
                 .html('<i class="ri-loader-4-line ri-spin me-1"></i> Starting...');
             
@@ -472,20 +472,23 @@ $(document).ready(function() {
                 error: function(xhr) {
                     Swal.fire({
                         title: 'Error',
-                        text: xhr.responseJSON.message,
+                        text: xhr.responseJSON?.message || 'Failed to start session',
                         icon: 'error'
                     });
                     button.prop('disabled', false)
                         .html('<i class="ri-play-circle-line me-1"></i> Start Bus Session');
                 }
             });
-        }).catch(() => {
+        } catch (error) {
+            console.error('Session start error:', error);
             Swal.fire({
-                title: 'Location Required',
-                text: 'Location access is required to start a bus session',
+                title: 'Error',
+                text: 'Failed to start session. Please try again.',
                 icon: 'error'
             });
-        });
+            button.prop('disabled', false)
+                .html('<i class="ri-play-circle-line me-1"></i> Start Bus Session');
+        }
     });
 
     @if($currentSession)
@@ -542,9 +545,6 @@ $(document).ready(function() {
         });
     }
 
-    @if($currentSession)
-        startAttendanceRefresh();
-    @endif
     $('#delayDuration').change(function() {
         $('.custom-delay-input').toggleClass('d-none', $(this).val() !== 'custom');
     });

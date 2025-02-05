@@ -456,7 +456,6 @@ class TeacherController extends Controller
                 'radius' => $validated['radius'],
                 'is_school_card' => $validated['is_school_card'] ?? false,
                 'sequence_number' => LocationCard::max('sequence_number') + 1,
-                'rfid_number' => 'not needed'
             ]);
 
             return response()->json([
@@ -471,6 +470,209 @@ class TeacherController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to save location',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function testLocationAlert(Request $request)
+    {
+        try {
+            $request->validate([
+                'location_id' => 'required|exists:location_cards,id'
+            ]);
+
+            $location = LocationCard::with('students')->findOrFail($request->location_id);
+            $session = Cache::get('session_mode', 'morning'); // Get current session
+            $bus = Bus::first(); // For testing purposes
+
+            if ($location->is_school_card) {
+                // School card logic
+                if ($session === 'morning') {
+                    // Morning session - School Arrival
+                    $studentsNotArrived = Student::whereDoesntHave('attendanceLogs', function ($query) {
+                        $query->where('session', 'morning')
+                            ->where('scan_type', 'entry')
+                            ->whereDate('created_at', today());
+                    })->get();
+
+                    foreach ($studentsNotArrived as $student) {
+                        $this->notificationController->notifyMissedPickup($student, 'School');
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => "Simulated morning school arrival check. " . 
+                                    $studentsNotArrived->count() . " students haven't arrived."
+                    ]);
+
+                } else {
+                    // Evening session - School Departure
+                    $studentsNotInBus = Student::whereHas('attendanceLogs', function ($query) {
+                        $query->where('session', 'morning')
+                            ->whereDate('created_at', today());
+                    })
+                    ->whereDoesntHave('attendanceLogs', function ($query) {
+                        $query->where('session', 'evening')
+                            ->where('scan_type', 'entry')
+                            ->whereDate('created_at', today());
+                    })->get();
+
+                    foreach ($studentsNotInBus as $student) {
+                        $this->notificationController->notifyMissedReturn($student);
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => "Simulated evening school departure check. " . 
+                                    $studentsNotInBus->count() . " students haven't boarded return bus."
+                    ]);
+                }
+            } else {
+                // Regular stop point logic
+                if ($session === 'morning') {
+                    // Morning session - Pickup point
+                    $studentsAtLocation = Student::where('exit_location_id', $location->id)
+                        ->whereDoesntHave('attendanceLogs', function ($query) {
+                            $query->where('session', 'morning')
+                                ->where('scan_type', 'entry')
+                                ->whereDate('created_at', today());
+                        })->get();
+
+                    foreach ($studentsAtLocation as $student) {
+                        $this->notificationController->notifyMissedPickup(
+                            $student, 
+                            $location->location_name
+                        );
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => "Simulated morning pickup check at " . $location->location_name . 
+                                    ". " . $studentsAtLocation->count() . " students missed pickup."
+                    ]);
+
+                } else {
+                    // Evening session - Drop-off point
+                    $studentsToExit = Student::where('exit_location_id', $location->id)
+                        ->whereHas('attendanceLogs', function ($query) {
+                            $query->where('session', 'evening')
+                                ->where('scan_type', 'entry')
+                                ->whereDate('created_at', today())
+                                ->whereNotExists(function ($subquery) {
+                                    $subquery->from('attendance_logs as exits')
+                                        ->whereColumn('exits.student_id', 'attendance_logs.student_id')
+                                        ->where('exits.scan_type', 'exit')
+                                        ->where('exits.session', 'evening')
+                                        ->whereDate('exits.created_at', today());
+                                });
+                        })->get();
+
+                    foreach ($studentsToExit as $student) {
+                        $this->notificationController->notifyMissedStop(
+                            $student, 
+                            $bus, 
+                            $location->location_name
+                        );
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => "Simulated evening drop-off check at " . $location->location_name . 
+                                    ". " . $studentsToExit->count() . " students need to exit."
+                    ]);
+                }
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Location alert test error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to simulate alert',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function showTestPage()
+    {
+        $locationCards = LocationCard::all();
+        $students = Student::all();
+        $buses = Bus::all();
+        $attendanceLogs = AttendanceLog::with(['student', 'bus'])
+            ->whereDate('created_at', today())
+            ->latest()
+            ->get();
+
+        return view('pages.test', compact('locationCards', 'students', 'buses', 'attendanceLogs'));
+    }
+    public function simulateAttendance(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'student_id' => 'required|exists:students,id',
+                'bus_id' => 'required|exists:buses,id',
+                'session' => 'required|in:morning,evening',
+                'scan_type' => 'required|in:entry,exit'
+            ]);
+
+            $log = AttendanceLog::create([
+                'student_id' => $validated['student_id'],
+                'bus_id' => $validated['bus_id'],
+                'session' => $validated['session'],
+                'scan_type' => $validated['scan_type'],
+                'scan_time' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance recorded',
+                'log' => $log->load('bus')
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record attendance',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTestAttendanceLog($studentId)
+    {
+        $logs = AttendanceLog::with('bus')
+            ->where('student_id', $studentId)
+            ->whereDate('scan_time', today())
+            ->orderBy('scan_time', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'logs' => $logs
+        ]);
+    }
+    public function clearAttendanceLogs()
+    {
+        try {
+            // Clear all attendance logs
+            AttendanceLog::truncate();
+            
+            // Or if you want to clear only today's logs:
+            // AttendanceLog::whereDate('created_at', today())->delete();
+
+            Cache::flush();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All attendance logs cleared successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error clearing attendance logs: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to clear attendance logs',
                 'error' => $e->getMessage()
             ], 500);
         }

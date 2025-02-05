@@ -48,7 +48,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 Route::get('/get-latest-logs', [StudentController::class, 'getLatestLogs'])->name('get.latest.logs');
-Route::post('/update-session-mode', [TeacherController::class, 'updateSessionMode']);
+Route::post('/update-session-mode', [TeacherController::class, 'updateSessionMode'])->name('teacher.update-session-mode');
 
 
 // routes/web.php
@@ -97,9 +97,21 @@ Route::post('/fees/generate', [TeacherController::class, 'generateFees'])->name(
 Route::post('/bus/update-location', [TeacherController::class, 'updateBusLocation'])
     ->name('driver.update-location');
 
-    Route::post('/locations/store', [TeacherController::class, 'storeLocation'])
+Route::post('/locations/store', [TeacherController::class, 'storeLocation'])
     ->name('locations.store');
 
+Route::post('/locations/test-alert', [TeacherController::class, 'testLocationAlert'])
+    ->name('locations.test-alert');
+
+Route::get('/test', [TeacherController::class, 'showTestPage'])->name('test.page');
+
+Route::post('/test/simulate-attendance', [TeacherController::class, 'simulateAttendance'])
+    ->name('test.simulate-attendance');
+Route::get('/test/attendance-log/{studentId}', [TeacherController::class, 'getTestAttendanceLog'])
+    ->name('test.attendance-log');
+
+Route::post('/test/clear-logs', [TeacherController::class, 'clearAttendanceLogs'])
+    ->name('test.clear-logs');
 
 Route::resource('buses', BusController::class);
 Route::view('/offline', 'offline');

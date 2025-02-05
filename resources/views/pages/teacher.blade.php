@@ -42,7 +42,7 @@
                     <div class="mb-3">
                         <label class="form-label">Location Type</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="isSchool" name="is_school_card">
+                            <input class="form-check-input" type="checkbox" id="isSchool" name="is_school_card" value="1">
                             <label class="form-check-label" for="isSchool">
                                 This is a school location
                             </label>
@@ -288,7 +288,12 @@
     <div class="col-xl-6">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title mb-4">Today's Attendance Log</h4>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Today's Test Attendance Log</h4>
+                    <button class="btn btn-danger btn-sm" id="clearLogs">
+                        <i class="ri-delete-bin-line me-1"></i> Clear All Logs
+                    </button>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-centered mb-0 align-middle table-hover table-nowrap">
                         <thead class="table-light">
@@ -1049,6 +1054,44 @@ $('#addLocationModal').on('hidden.bs.modal', function() {
     // Initial fetch and set interval
     fetchNotifications();
     setInterval(fetchNotifications, 1000);
+    // Add to your existing script
+    $('#clearLogs').click(function() {
+        Swal.fire({
+            title: 'Clear Attendance Logs?',
+            text: 'This will delete all attendance logs. This action cannot be undone!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, clear all!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '{{ route("test.clear-logs") }}',
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Cleared!',
+                                text: 'All attendance logs have been cleared.',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                            refreshAttendanceLog();
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire('Error', 'Failed to clear logs', 'error');
+                    }
+                });
+            }
+        });
+    });
 
     function requestNotificationPermission() {
         if (!("Notification" in window)) {

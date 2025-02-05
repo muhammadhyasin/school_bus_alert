@@ -93,7 +93,13 @@ Route::get('/parent/fees', [ParentController::class, 'getFees'])->name('parent.f
 Route::post('/parent/fees/pay', [ParentController::class, 'processPayment'])->name('parent.fees.pay');
 Route::post('/fees/generate', [TeacherController::class, 'generateFees'])->name('admin.generate-fees');
 
-Route::post('/driver/update-location', 'DriverController@updateLocation')->name('driver.update-location');
+
+Route::post('/bus/update-location', [TeacherController::class, 'updateBusLocation'])
+    ->name('driver.update-location');
+
+    Route::post('/locations/store', [TeacherController::class, 'storeLocation'])
+    ->name('locations.store');
+
 
 Route::resource('buses', BusController::class);
 Route::view('/offline', 'offline');

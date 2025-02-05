@@ -16,6 +16,77 @@
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBusModal">
                     <i class="ri-bus-line align-middle me-1"></i> Add Bus
                 </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLocationModal">
+                    <i class="ri-map-pin-line align-middle me-1"></i> Add Location
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Add Location Modal -->
+<div class="modal fade" id="addLocationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="locationForm">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label">Location Name</label>
+                        <input type="text" class="form-control" id="locationName" name="location_name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Location Type</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isSchool" name="is_school_card">
+                            <label class="form-check-label" for="isSchool">
+                                This is a school location
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Search Location</label>
+                        <input type="text" class="form-control" id="searchAddress" 
+                               placeholder="Search for an address...">
+                    </div>
+
+                    <div class="mb-3">
+                        <div id="locationMap" style="height: 400px; border-radius: 8px;"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Latitude</label>
+                                <input type="text" class="form-control" id="latitude" name="latitude" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Longitude</label>
+                                <input type="text" class="form-control" id="longitude" name="longitude" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Radius (meters)</label>
+                                <input type="number" class="form-control" id="radius" name="radius" 
+                                       value="50" min="10" max="1000">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveLocation">
+                    <i class="ri-save-line"></i> Save Location
+                </button>
             </div>
         </div>
     </div>
@@ -410,6 +481,173 @@ $(document).ready(function () {
     requestNotificationPermission();
     let lastNotificationIds = []; // Add this
     const notificationSound = new Audio('{{ asset("notify.wav") }}');
+   // Add to your existing $(document).ready function
+let map, marker, geocoder, circle;
+
+// Initialize map when location modal is shown
+$('#addLocationModal').on('shown.bs.modal', function() {
+    if (!map) {
+        initializeMap();
+    }
+    google.maps.event.trigger(map, 'resize');
+});
+
+function initializeMap() {
+    geocoder = new google.maps.Geocoder();
+    
+    // Try to get user's current location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            initializeMapWithPosition(position.coords.latitude, position.coords.longitude);
+        }, function() {
+            // If geolocation fails, use default location
+            initializeMapWithPosition(0, 0);
+        });
+    } else {
+        initializeMapWithPosition(0, 0);
+    }
+}
+
+function initializeMapWithPosition(lat, lng) {
+    const defaultLocation = { lat, lng };
+    
+    map = new google.maps.Map(document.getElementById('locationMap'), {
+        zoom: 15,
+        center: defaultLocation,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        zoomControl: true,
+        mapTypeControl: false,
+        streetViewControl: false
+    });
+
+    // Create marker
+    marker = new google.maps.Marker({
+        position: defaultLocation,
+        map: map,
+        draggable: true
+    });
+
+    // Create circle for radius visualization
+    circle = new google.maps.Circle({
+        map: map,
+        fillColor: '#4CAF50',
+        fillOpacity: 0.2,
+        strokeColor: '#4CAF50',
+        strokeWeight: 1,
+        radius: parseInt($('#radius').val())
+    });
+
+    // Update circle when marker is dragged
+    marker.addListener('dragend', function() {
+        updateLocationInfo(marker.getPosition());
+        circle.setCenter(marker.getPosition());
+    });
+
+    // Update circle when radius changes
+    $('#radius').on('input', function() {
+        circle.setRadius(parseInt($(this).val()));
+    });
+
+    // Add click listener to map
+    map.addListener('click', function(e) {
+        marker.setPosition(e.latLng);
+        circle.setCenter(e.latLng);
+        updateLocationInfo(e.latLng);
+    });
+
+    // Initialize search box
+    const searchInput = document.getElementById('searchAddress');
+    const searchBox = new google.maps.places.SearchBox(searchInput);
+
+    map.addListener('bounds_changed', function() {
+        searchBox.setBounds(map.getBounds());
+    });
+
+    searchBox.addListener('places_changed', function() {
+        const places = searchBox.getPlaces();
+        if (places.length === 0) return;
+
+        const place = places[0];
+        if (!place.geometry) return;
+
+        // Update map and marker
+        map.setCenter(place.geometry.location);
+        marker.setPosition(place.geometry.location);
+        circle.setCenter(place.geometry.location);
+        updateLocationInfo(place.geometry.location);
+
+        if (!$('#locationName').val()) {
+            $('#locationName').val(place.name);
+        }
+    });
+}
+
+function updateLocationInfo(latLng) {
+    $('#latitude').val(latLng.lat().toFixed(6));
+    $('#longitude').val(latLng.lng().toFixed(6));
+
+    // Get address for the selected location
+    geocoder.geocode({ location: latLng }, function(results, status) {
+        if (status === 'OK' && results[0]) {
+            if (!$('#locationName').val()) {
+                $('#locationName').val(results[0].formatted_address.split(',')[0]);
+            }
+        }
+    });
+}
+
+// Handle save location button click
+$('#saveLocation').click(function() {
+    const button = $(this);
+    const form = $('#locationForm');
+    
+    if (!$('#latitude').val() || !$('#longitude').val()) {
+        Swal.fire('Error', 'Please select a location on the map', 'error');
+        return;
+    }
+
+    button.prop('disabled', true)
+        .html('<i class="ri-loader-4-line ri-spin"></i> Saving...');
+
+    $.ajax({
+        url: '{{ route("locations.store") }}',
+        method: 'POST',
+        data: form.serialize(),
+        success: function(response) {
+            if (response.success) {
+                $('#addLocationModal').modal('hide');
+                Swal.fire({
+                    title: 'Success',
+                    text: 'Location saved successfully',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('Error', xhr.responseJSON?.message || 'Failed to save location', 'error');
+        },
+        complete: function() {
+            button.prop('disabled', false)
+                .html('<i class="ri-save-line"></i> Save Location');
+        }
+    });
+});
+
+// Reset form when modal is hidden
+$('#addLocationModal').on('hidden.bs.modal', function() {
+    $('#locationForm')[0].reset();
+    if (marker) {
+        marker.setMap(null);
+    }
+    if (circle) {
+        circle.setMap(null);
+    }
+    map = null;
+});
 
     function toggleNotificationSound() {
         const currentState = localStorage.getItem("notificationSound");

@@ -401,8 +401,8 @@ $(document).ready(function() {
             url: '{{ route("driver.update-location") }}',
             method: 'POST',
             data: {
-                latitude,
-                longitude,
+                latitude: latitude,
+                longitude: longitude,
                 session_id: '{{ $currentSession ? $currentSession->id : "" }}',
                 _token: '{{ csrf_token() }}'
             },
@@ -410,9 +410,12 @@ $(document).ready(function() {
                 if (response.studentsUpdated) {
                     refreshAttendanceLogs();
                 }
+                updateLocationStatus('Location updated successfully');
             },
             error: function(xhr) {
                 console.error('Server update error:', xhr);
+                updateLocationStatus('Server update failed. Retrying...', 'warning');
+                setTimeout(() => sendLocationToServer(latitude, longitude), 5000);
             }
         });
     }

@@ -49,11 +49,11 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    {{-- <div class="mb-3">
                         <label class="form-label">Search Location</label>
                         <input type="text" class="form-control" id="searchAddress" 
                                placeholder="Search for an address...">
-                    </div>
+                    </div> --}}
 
                     <div class="mb-3">
                         <div id="locationMap" style="height: 400px; border-radius: 8px;"></div>
